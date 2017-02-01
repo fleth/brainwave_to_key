@@ -42,7 +42,6 @@ namespace TrainingDataCreator
 
         public void OnKeyboardEvent(ref KeyboardHook.StateKeyboard s)
         {
-            Console.WriteLine(s.Stroke + " : " + s.Key.GetHashCode() + " : " + s.Key + " : " + s.ScanCode);
             switch (s.Stroke)
             {
                 case KeyboardHook.Stroke.KEY_DOWN:
@@ -52,6 +51,40 @@ namespace TrainingDataCreator
                 case KeyboardHook.Stroke.KEY_UP:
                 case KeyboardHook.Stroke.SYSKEY_UP:
                     traningDataCreator.KeyUp(s.ScanCode);
+                    break;
+            }
+        }
+
+        public void OnMouseEvent(ref MouseHook.StateMouse s)
+        {
+            switch (s.Stroke)
+            {
+                case MouseHook.Stroke.LEFT_DOWN:
+                    traningDataCreator.MouseDown(MouseButton.Left);
+                    break;
+                case MouseHook.Stroke.LEFT_UP:
+                    traningDataCreator.MouseUp(MouseButton.Left);
+                    break;
+                case MouseHook.Stroke.RIGHT_DOWN:
+                    traningDataCreator.MouseDown(MouseButton.Right);
+                    break;
+                case MouseHook.Stroke.RIGHT_UP:
+                    traningDataCreator.MouseUp(MouseButton.Right);
+                    break;
+                case MouseHook.Stroke.MIDDLE_DOWN:
+                    traningDataCreator.MouseDown(MouseButton.Middle);
+                    break;
+                case MouseHook.Stroke.MIDDLE_UP:
+                    traningDataCreator.MouseUp(MouseButton.Middle);
+                    break;
+                case MouseHook.Stroke.WHEEL_DOWN:
+                    traningDataCreator.MouseDown(MouseButton.Wheel);
+                    break;
+                case MouseHook.Stroke.WHEEL_UP:
+                    traningDataCreator.MouseUp(MouseButton.Wheel);
+                    break;
+                case MouseHook.Stroke.MOVE:
+                    traningDataCreator.MousePosition(s.X, s.Y);
                     break;
             }
         }
@@ -70,9 +103,9 @@ namespace TrainingDataCreator
             this.Icon = SystemIcons.Application;
         }
 
-        public void OnComplete(int[] keyData, float[] brainWaveData)
+        public void OnComplete(TrainingData trainingData)
         {
-            var data = new { label = keyData, brainwaves = brainWaveData };
+            var data = new { label = trainingData.keyData, brainwaves = trainingData.brainWaveData };
             try
             {
                 var json = JsonConvert.SerializeObject(data);
@@ -113,6 +146,8 @@ namespace TrainingDataCreator
             streamWriter = CreateStreamWriter();
             KeyboardHook.AddEvent(OnKeyboardEvent);
             KeyboardHook.Start();
+            MouseHook.AddEvent(OnMouseEvent);
+            MouseHook.Start();
             button1.Enabled = false;
             button2.Enabled = true;
             
@@ -131,10 +166,16 @@ namespace TrainingDataCreator
             if (KeyboardHook.IsHooking)
             {
                 KeyboardHook.Stop();
-                button1.Enabled = true;
-                button2.Enabled = false;
             }
-            
+
+            if (MouseHook.IsHooking)
+            {
+                MouseHook.Stop();
+            }
+
+            button1.Enabled = true;
+            button2.Enabled = false;
+
             notifyIcon1.BalloonTipText = "キャプチャを終了しました";
             notifyIcon1.ShowBalloonTip(3000);
         }
