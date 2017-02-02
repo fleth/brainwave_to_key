@@ -17,9 +17,7 @@ namespace TrainingDataCreator
 
         private StreamWriter streamWriter = null;
 
-        private string filePath = "trainingdata{0}.json";
-
-        private const int dataCountMax = 10000;
+        private string filePath = "trainingdata.json";
 
         private int dataCount = 0;
 
@@ -35,9 +33,7 @@ namespace TrainingDataCreator
 
         private StreamWriter CreateStreamWriter()
         {
-            var fileCount = (dataCount % dataCountMax) + 1;
-            var fileName = string.Format(filePath, fileCount);
-            return new StreamWriter(fileName, false, System.Text.Encoding.GetEncoding("utf-8"));
+            return new StreamWriter(filePath, false, System.Text.Encoding.GetEncoding("utf-8"));
         }
 
         public void OnKeyboardEvent(ref KeyboardHook.StateKeyboard s)
@@ -105,18 +101,20 @@ namespace TrainingDataCreator
 
         public void OnComplete(TrainingData trainingData)
         {
-            var data = new { label = trainingData.keyData, brainwaves = trainingData.brainWaveData };
+            var data = new {
+                keys = trainingData.keyData,
+                brainwaves = trainingData.brainWaveData,
+                mouse = new {
+                    move = trainingData.mouseMoveData,
+                    button = trainingData.mouseButtonData
+                }
+            };
+
             try
             {
                 var json = JsonConvert.SerializeObject(data);
                 streamWriter.Write(json.ToString() + Environment.NewLine);
                 dataCount++;
-                if (dataCountMax < dataCount)
-                {
-                    streamWriter.Close();
-                    streamWriter = CreateStreamWriter();
-                }
-
             }
             catch (Exception e)
             {
