@@ -21,10 +21,12 @@ print("Write input data file")
 with open("input_%s.txt" % args.input, "w") as f:
   for data in datas:
     i = data[args.input]
-    f.writeline(" ".join(i))
+    f.write(" ".join(i))
+    f.write("\n")
 
 print("Write output data file")
 with open("output_%s.txt" % args.output, "w") as f:
   for data in datas:
     o = data[args.output]
-    f.writeline(" ".join(i))
+    f.write(" ".join(i))
+    f.write("\n")
