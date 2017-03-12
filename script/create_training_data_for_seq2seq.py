@@ -15,7 +15,7 @@ with codecs.open(args.filename, "r", 'utf-8-sig') as f:
   lines = f.readlines()
 
 for line in lines:
-  datas.append(json.load(line))
+  datas.append(json.loads(line))
 
 print("Write input data file")
 with open("input_%s.txt" % args.input) as f:
