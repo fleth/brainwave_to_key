@@ -25,14 +25,14 @@ for line in lines:
   datas.append(json.loads(line))
 
 print("Write input data file")
-with open("input_%s.txt" % args.input, "w") as f:
+with open("input_%s.txt" % args.input.replace(":","_"), "w") as f:
   for data in datas:
     i = get_data(data, args.input)
     f.write(" ".join(str(s) for s in i))
     f.write("\n")
 
 print("Write output data file")
-with open("output_%s.txt" % args.output, "w") as f:
+with open("output_%s.txt" % args.output.replace(":","_"), "w") as f:
   for data in datas:
     o = get_data(data, args.output)
     f.write(" ".join(str(s) for s in o))
