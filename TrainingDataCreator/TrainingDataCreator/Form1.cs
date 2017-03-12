@@ -31,9 +31,12 @@ namespace TrainingDataCreator
             mindwaveConnector = new MindWaveProxy.MindWaveConnector();
         }
 
-        private StreamWriter CreateStreamWriter()
+        private StreamWriter CreateStreamWriter(string path)
         {
-            return new StreamWriter(filePath, false, System.Text.Encoding.GetEncoding("utf-8"));
+
+            DateTime dtNow = DateTime.Now;
+            string filePath = dtNow.ToString("yyyyMMdd_HHmmss") + ".json";
+            return new StreamWriter(path + "\\" + filePath, false, System.Text.Encoding.GetEncoding("utf-8"));
         }
 
         public void OnKeyboardEvent(ref KeyboardHook.StateKeyboard s)
@@ -97,6 +100,10 @@ namespace TrainingDataCreator
             notifyIcon1.Text = "TraningDataCreator";
             notifyIcon1.BalloonTipTitle = "TraningDataCreator";
             this.Icon = SystemIcons.Application;
+            
+            folderBrowserDialog1.RootFolder = Environment.SpecialFolder.MyComputer;
+            folderBrowserDialog1.SelectedPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+            textBox1.Text = folderBrowserDialog1.SelectedPath;
         }
 
         public void OnComplete(TrainingData trainingData)
@@ -141,13 +148,14 @@ namespace TrainingDataCreator
         {
             mindwaveConnector.Connect(OnReceive, true);
             traningDataCreator = new TraningDataCreator(keyDataLength, 50);
-            streamWriter = CreateStreamWriter();
+            streamWriter = CreateStreamWriter(textBox1.Text);
             KeyboardHook.AddEvent(OnKeyboardEvent);
             KeyboardHook.Start();
             MouseHook.AddEvent(OnMouseEvent);
             MouseHook.Start();
             button1.Enabled = false;
             button2.Enabled = true;
+            button3.Enabled = false;
             
             notifyIcon1.BalloonTipText = "キャプチャを開始しました";
             notifyIcon1.ShowBalloonTip(3000);
@@ -173,6 +181,7 @@ namespace TrainingDataCreator
 
             button1.Enabled = true;
             button2.Enabled = false;
+            button3.Enabled = true;
 
             notifyIcon1.BalloonTipText = "キャプチャを終了しました";
             notifyIcon1.ShowBalloonTip(3000);
@@ -180,11 +189,13 @@ namespace TrainingDataCreator
 
         private void button1_Click(object sender, EventArgs e)
         {
+            if (!button1.Enabled) return;
             CaptureStart();
         }
 
         private void button2_Click(object sender, EventArgs e)
         {
+            if (!button2.Enabled) return;
             CaptureStop();
         }
 
@@ -193,6 +204,14 @@ namespace TrainingDataCreator
             startHotKey.Dispose();
             stopHotKey.Dispose();
             CaptureStop();
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            if(folderBrowserDialog1.ShowDialog() == DialogResult.OK)
+            {
+                textBox1.Text = folderBrowserDialog1.SelectedPath;
+            }
         }
     }
 }
