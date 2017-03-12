@@ -1,5 +1,6 @@
 import argparse
 import json
+import codecs
 
 parser = argparse.ArgumentParser(description='Create Training Data For Seq2Seq')
 parser.add_argument('-i', '--input', type=str, help="input data name")
@@ -9,7 +10,7 @@ parser.add_argument('filename', type=str, help="filename")
 args = parser.parse_args()
 
 print("Read %s" % args.filename)
-with open(args.filename) as f:
+with codecs.open(args.filename, "r", 'utf-8-sig') as f:
   datas = json.load(f)
 
 print("Write input data file")
