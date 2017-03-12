@@ -9,9 +9,13 @@ parser.add_argument('filename', type=str, help="filename")
 
 args = parser.parse_args()
 
+datas = []
 print("Read %s" % args.filename)
 with codecs.open(args.filename, "r", 'utf-8-sig') as f:
-  datas = json.load(f)
+  lines = f.readlines()
+
+for line in lines:
+  datas.append(json.load(line))
 
 print("Write input data file")
 with open("input_%s.txt" % args.input) as f:
