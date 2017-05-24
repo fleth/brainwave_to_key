@@ -17,8 +17,6 @@ namespace TrainingDataCreator
 
         private StreamWriter streamWriter = null;
 
-        private string filePath = "trainingdata.json";
-
         private int dataCount = 0;
 
         private HotKey startHotKey;
@@ -129,13 +127,15 @@ namespace TrainingDataCreator
             }
         }
 
-        public void OnReceive(string data)
+        public void OnThinkGearReceive(string data)
         {
             var definition = new { rawEeg = 0 };
             try
             {
                 var json = JsonConvert.DeserializeAnonymousType(data, definition);
-                traningDataCreator.PushBrainWave(json.rawEeg, OnComplete);
+                var eeg = new float[1];
+                eeg[0] = json.rawEeg;
+                traningDataCreator.PushBrainWave(eeg, OnComplete);
             }
             catch (Exception e)
             {
@@ -146,7 +146,7 @@ namespace TrainingDataCreator
 
         private void CaptureStart()
         {
-            mindwaveConnector.Connect(OnReceive, true);
+            mindwaveConnector.Connect(OnThinkGearReceive, true);
             traningDataCreator = new TraningDataCreator(keyDataLength, 50);
             streamWriter = CreateStreamWriter(textBox1.Text);
             KeyboardHook.AddEvent(OnKeyboardEvent);

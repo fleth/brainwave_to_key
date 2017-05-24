@@ -20,7 +20,7 @@ namespace TrainingDataCreator
     public struct TrainingData
     {
         public int[] keyData;
-        public float[] brainWaveData;
+        public float[,] brainWaveData;
         public float[] mouseMoveData;
         public int[] mouseButtonData;
     }
@@ -36,10 +36,10 @@ namespace TrainingDataCreator
         
         public delegate void OnComplete(TrainingData trainingData);
 
-        public TraningDataCreator(int keyDataLength, int brainWaveDataLength)
+        public TraningDataCreator(int keyDataLength, int brainWaveDataLength, int channelNum = 1)
         {
             trainingData.keyData = new int[keyDataLength];
-            trainingData.brainWaveData = new float[brainWaveDataLength];
+            trainingData.brainWaveData = new float[channelNum, brainWaveDataLength];
             trainingData.mouseButtonData = new int[Enum.GetValues(typeof(MouseButton)).Length];
             trainingData.mouseMoveData = new float[Enum.GetValues(typeof(MouseMove)).Length];
             brainWaveDataCount = 0;
@@ -108,11 +108,14 @@ namespace TrainingDataCreator
             }
         }
 
-        public void PushBrainWave(float data, OnComplete onComplete)
+        public void PushBrainWave(float[] data, OnComplete onComplete)
         {
-            trainingData.brainWaveData[brainWaveDataCount] = data;
+            for(int i = 0; i < trainingData.brainWaveData.GetLength(0); i++)
+            {
+                trainingData.brainWaveData[i, brainWaveDataCount] = data[i];
+            }
             brainWaveDataCount++;
-            if(trainingData.brainWaveData.Length == brainWaveDataCount)
+            if(trainingData.brainWaveData.GetLength(1) == brainWaveDataCount)
             {
                 brainWaveDataCount = 0;
                 position = lastPosition;
