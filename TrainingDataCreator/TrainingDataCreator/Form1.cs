@@ -11,6 +11,8 @@ namespace TrainingDataCreator
     {
         private MindWaveProxy.MindWaveConnector mindwaveConnector;
 
+        private MindWaveProxy.WebSocketServer webSocketServer;
+
         private TraningDataCreator traningDataCreator;
 
         private const int keyDataLength = 128;
@@ -27,6 +29,7 @@ namespace TrainingDataCreator
         {
             InitializeComponent();
             mindwaveConnector = new MindWaveProxy.MindWaveConnector();
+            webSocketServer = new MindWaveProxy.WebSocketServer();
         }
 
         private StreamWriter CreateStreamWriter(string path)
@@ -98,6 +101,10 @@ namespace TrainingDataCreator
             notifyIcon1.Text = "TraningDataCreator";
             notifyIcon1.BalloonTipTitle = "TraningDataCreator";
             this.Icon = SystemIcons.Application;
+
+            comboBox1.Items.Add("ThinkGear");
+            comboBox1.Items.Add("Muse");
+            comboBox1.SelectedIndex = 0;
             
             folderBrowserDialog1.RootFolder = Environment.SpecialFolder.MyComputer;
             folderBrowserDialog1.SelectedPath = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
@@ -144,10 +151,26 @@ namespace TrainingDataCreator
             }
         }
 
+        public void OnMuseReceive(string data)
+        {
+        }
+
         private void CaptureStart()
         {
-            mindwaveConnector.Connect(OnThinkGearReceive, true);
-            traningDataCreator = new TraningDataCreator(keyDataLength, 50);
+            switch(comboBox1.SelectedItem)
+            {
+                case "ThinkGear":
+                    mindwaveConnector.Connect(OnThinkGearReceive, true);
+                    traningDataCreator = new TraningDataCreator(keyDataLength, 50);
+                    break;
+                case "Muse":
+                    webSocketServer.StartServer(9999, OnMuseReceive);
+                    traningDataCreator = new TraningDataCreator(keyDataLength, 50, 4);
+                    break;
+                default:
+                    Console.WriteLine("Unknown Device: " + comboBox1.SelectedItem);
+                    return;
+            }
             streamWriter = CreateStreamWriter(textBox1.Text);
             KeyboardHook.AddEvent(OnKeyboardEvent);
             KeyboardHook.Start();
@@ -156,6 +179,7 @@ namespace TrainingDataCreator
             button1.Enabled = false;
             button2.Enabled = true;
             button3.Enabled = false;
+            comboBox1.Enabled = false;
             
             notifyIcon1.BalloonTipText = "キャプチャを開始しました";
             notifyIcon1.ShowBalloonTip(3000);
@@ -163,7 +187,18 @@ namespace TrainingDataCreator
 
         private void CaptureStop()
         {
-            mindwaveConnector.Disconnect();
+            switch (comboBox1.SelectedItem)
+            {
+                case "ThinkGear":
+                    mindwaveConnector.Disconnect();
+                    break;
+                case "Muse":
+                    webSocketServer.StopServer();
+                    break;
+                default:
+                    Console.WriteLine("Unknown Device: " + comboBox1.SelectedItem);
+                    return;
+            }
             if(streamWriter != null)
             {
                 streamWriter.Close();
@@ -182,6 +217,7 @@ namespace TrainingDataCreator
             button1.Enabled = true;
             button2.Enabled = false;
             button3.Enabled = true;
+            comboBox1.Enabled = true;
 
             notifyIcon1.BalloonTipText = "キャプチャを終了しました";
             notifyIcon1.ShowBalloonTip(3000);
