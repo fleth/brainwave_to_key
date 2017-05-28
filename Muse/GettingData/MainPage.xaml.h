@@ -184,7 +184,11 @@ namespace GettingData
         /// decimal places.
         Platform::String^ formatData(double data) const;
 
+		void connect_websocket(Platform::String^ url, int retry);
 
+		void onClosed(Windows::Networking::Sockets::IWebSocket^ sender, Windows::Networking::Sockets::WebSocketClosedEventArgs^ args);
+
+		void create_websocket();
 
 
         //////////////////////////////////////////////////////
@@ -226,6 +230,10 @@ namespace GettingData
 
         /// Toogle for pause/resume data transmission.
         bool enable_data_;
+
+		Windows::Networking::Sockets::MessageWebSocket^ webSockets;
+
+		Windows::Storage::Streams::DataWriter^ dataWriter;
     };
 
 

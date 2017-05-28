@@ -153,6 +153,13 @@ namespace TrainingDataCreator
 
         public void OnMuseReceive(string data)
         {
+            var eeg = new float[4];
+            var museData = data.Split(',');
+            for(var i = 0; i < 4; i++)
+            {
+                eeg[i] = float.Parse(museData[i]);
+            }
+            traningDataCreator.PushBrainWave(eeg, OnComplete);
         }
 
         private void CaptureStart()

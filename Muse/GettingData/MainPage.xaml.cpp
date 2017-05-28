@@ -26,6 +26,9 @@ using namespace Windows::UI::Xaml::Input;
 using namespace Windows::UI::Xaml::Media;
 using namespace Windows::UI::Xaml::Navigation;
 using namespace Windows::Devices::Radios;
+using namespace Windows::Networking::Sockets;
+using namespace Windows::Storage::Streams;
+
 
 using namespace interaxon;
 using namespace concurrency;
@@ -53,6 +56,14 @@ MainPage::MainPage() :
     manager_->set_muse_listener(muse_listener_);
     is_bluetooth_enabled_.store(false);
     check_bluetooth_enabled();
+
+	create_websocket();
+}
+
+void MainPage::create_websocket() {
+	webSockets = ref new MessageWebSocket();
+	webSockets->Control->MessageType = SocketMessageType::Utf8;
+	webSockets->Closed += ref new TypedEventHandler<IWebSocket^, WebSocketClosedEventArgs^>(this, &MainPage::onClosed);
 }
 
 void MainPage::init_data_type_combobox() {
@@ -138,12 +149,29 @@ void MainPage::receive_connection_packet(const MuseConnectionPacket & packet, co
 
 void MainPage::receive_muse_data_packet(const std::shared_ptr<MuseDataPacket> & packet, const std::shared_ptr<Muse> & muse) {
     model_.set_values(packet);
-    OutputDebugString(L"MainPage::receive_muse_data_packet\n");
+	if (dataWriter != nullptr) {
+		double buffer[6] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 };
+		model_.get_buffer(buffer);
+		std::ostringstream ostr;
+		for (int i = 0; i < 6; i++) {
+			ostr << buffer[i];
+			if (i < 5) {
+				ostr << ",";
+			}
+		}
+		std::string input = ostr.str();
+		std::wstring w_str = std::wstring(input.begin(), input.end());
+		const wchar_t* w_chars = w_str.c_str();
+
+		dataWriter->WriteString(ref new Platform::String(w_chars));
+		create_task(dataWriter->StoreAsync());
+	}
+    //OutputDebugString(L"MainPage::receive_muse_data_packet\n");
 }
 
 void MainPage::receive_muse_artifact_packet(const MuseArtifactPacket & packet, const std::shared_ptr<Muse> & muse) {
     model_.set_values(packet);
-    OutputDebugString(L"MainPage::receive_artifact_packet\n");
+	//OutputDebugString(L"MainPage::receive_artifact_packet\n");
 }
 
 void MainPage::refresh_button_clicked(Platform::Object^ sender,
@@ -166,14 +194,53 @@ void MainPage::connect_button_clicked(Platform::Object^ sender,
         my_muse_->register_connection_listener(connection_listener_);
         my_muse_->register_data_listener(data_listener_, current_data_type_);
         my_muse_->run_asynchronously();
+
+		connect_websocket("ws://localhost:9999", 0);
     }
 }
+
+void MainPage::connect_websocket(Platform::String^ url, int retry) {
+	try{
+		create_task(webSockets->ConnectAsync(ref new Uri(url))).then([this, url, retry](task<void> previousTask) {
+			try {
+				previousTask.get();
+			}
+			catch (Exception^ e) {
+				dataWriter = nullptr;
+				create_task([]() {
+					std::this_thread::sleep_for(std::chrono::seconds(5));
+				}).then([this, url, retry]() {
+					connect_websocket(url, retry + 1);
+				});
+				return;
+			}
+
+			dataWriter = ref new DataWriter(webSockets->OutputStream);
+		});
+	}
+	catch(Exception^ e){
+		OutputDebugString(L"WebSockets->ConnectAsync Error");
+	}
+}
+
+void MainPage::onClosed(Windows::Networking::Sockets::IWebSocket^ sender, Windows::Networking::Sockets::WebSocketClosedEventArgs^ args) {
+	if (dataWriter != nullptr) {
+		dataWriter = nullptr;
+		webSockets->Close(1000, "");
+		create_websocket();
+	}
+}
+
 void MainPage::disconnect_button_clicked(Platform::Object^ sender,
     Windows::UI::Xaml::RoutedEventArgs^ e)
 {
     if (my_muse_ != nullptr) {
         my_muse_->disconnect();
     }
+
+	if (dataWriter != nullptr) {
+		webSockets->Close(1000, "");
+	}
 }
 
 void GettingData::MainPage::pause_resume_clicked(Platform::Object ^ sender, Windows::UI::Xaml::RoutedEventArgs ^ e)
